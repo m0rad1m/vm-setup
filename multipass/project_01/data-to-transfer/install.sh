@@ -38,7 +38,7 @@ echo "# Starting docker-compose..."
 echo "---"
 
 # Navigate to the project directory and start the Docker Compose project
-cd project && sudo docker-compose up --build -d
+cd project && sudo docker compose up --build -d
 
 # Show the IP address of the VM
 echo "# Setup complete! You can access the application at the following IP address:"
