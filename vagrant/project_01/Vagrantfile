@@ -3,8 +3,13 @@ Vagrant.configure("2") do |config|
   config.vm.box_version = "0.1.0"
 
   # Define the user whose home directory to use
-  vm_user = "vagrant"
+  vm_user = "ubuntu"
   home_dir = "/home/#{vm_user}"
+
+
+  ###################################
+  ### Virtual machine settings
+  ###################################
 
   # Configuration of virtualbox provider
   config.vm.provider "virtualbox" do |vb|
@@ -13,9 +18,21 @@ Vagrant.configure("2") do |config|
         vb.name = "my-docker-vm"
     end
 
+  # When started from WSL: Prevent mapping of folders
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  ###################################
+  ### Host settings
+  ###################################
+  
   # Set hostname
   config.vm.hostname = "my-docker-vm"
-  
+
+  # Vagrant SSH connection settings
+  # Prevent Vagrant from replacing the default SSH key with a unique newly generated key
+  # VERY UNSECURE - only use for testing/development environments
+  # config.ssh.insert_key = false
+
   # Disable automatic update of virtual box guest editions
   config.vbguest.auto_update = false
 
@@ -23,23 +40,52 @@ Vagrant.configure("2") do |config|
   config.vm.network "public_network", ip: "192.168.50.10", bridge: "Realtek 8822CE Wireless LAN 802.11ac PCI-E NIC", hostname: true
   config.vm.network "forwarded_port", guest: "8081", host: "8081"
 
-  # When started from WSL: Prevent mapping of folders
-  config.vm.synced_folder ".", "/vagrant", disabled: true
-  config.vm.synced_folder "/mnt/c/Users/morad/Documents/Vagrant/project", "/home/vagrant/project", create: true
-
-  # SSH settings
-  # Prevent Vagrant from replacing the default SSH key with a unique newly generated key
-  # VERY UNSECURE - only use for testing/development environments
-  # config.ssh.insert_key = false
-  # Uploading my SSH public key
-  config.vm.provision "file", source: "~/.ssh/ansible_demo.pub", destination: "~/.ssh/uploaded_key.pub"
-  config.vm.provision "shell", path: "../../scripts/add-ssh-authorized-key.sh", args: [vm_user]
-
   # Set timezone and keyboard layout using external script
-  config.vm.provision "shell", name: "set-timezone-and-keyboard", path: "../../scripts/set-german-timezone-and-keyboard-layout.sh"
+  config.vm.provision "shell", name: "set-timezone-and-keyboard", path: "../../data/scripts/set-german-timezone-and-keyboard-layout.sh"
+
+  # Setup SSH demon configuration
+  config.vm.provision "shell", name: "setup-sshd-config", 
+    path: "../../data/scripts/setup-sshd-config.sh"
+  config.vm.provision "shell", name: "restart-sshd", inline: "systemctl restart ssh"
+
+
+  ###################################
+  ### User settings
+  ###################################
+
+  # Create dedicated user
+  config.vm.provision "shell", name: "add-user",
+    path: "../../data/scripts/add-user.sh", args: [vm_user]
+
+  # Sync project folder
+  config.vm.synced_folder "/mnt/c/Users/morad/Documents/Vagrant/project", "/home/ubuntu/project", create: true
+
+  # Prepare SSH directory structure
+  config.vm.provision "shell", name: "prepare-ssh-user-directory",
+    path: "../../data/scripts/prepare-ssh-user-directory.sh",
+    args: [vm_user]
+
+  # Upload public SSH key and add it to authorized_keys
+  config.vm.provision "file", source: "~/.ssh/ansible_demo.pub",
+    destination: "/home/#{vm_user}/.ssh/uploaded_key.pub"
+  
+  config.vm.provision "shell", name: "add-ssh-authorized-key",
+    path: "../../data/scripts/add-ssh-authorized-key.sh",
+    args: [vm_user]
+
+  # Set user permissions on home directory
+  config.vm.provision "shell", name: "set-user-permissions",
+    inline: "sudo chown -R #{vm_user}:#{vm_user} /home/#{vm_user}"
+
+  ###################################
+  ### Docker settings
+  ###################################
+
 
   # Install Docker and dependencies
-  config.vm.provision "shell", name: "install-docker", path: "../../scripts/install-docker.sh", args: [vm_user]
+  config.vm.provision "shell", name: "setup-docker",
+    path: "../../data/scripts/setup-docker.sh",
+    args: [vm_user]
 
   # Run Ansible Playbook
   #config.vm.provision :shell, inline: "apt-get update"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USER=$1
+USER_NAME=$1
 
 # Update package list
 sudo apt-get update
@@ -30,17 +30,17 @@ sudo systemctl enable docker
 sudo systemctl start docker
 
 # Add the current user to the docker group
-sudo usermod -aG docker $USER
+sudo usermod -aG docker $USER_NAME
 
 # Check Docker and Docker Compose versions
 sudo docker --version
-sudo docker-compose --version
+sudo docker compose --version
 
 echo "# Starting docker compose..."
 echo "---"
 
 # Navigate to the project directory and start the Docker Compose project
-cd /home/$USER/project && sudo docker compose up --build -d
+cd /home/$USER_NAME/project && sudo docker compose up --build -d
 
 # Show the IP address of the VM
 echo "# Setup complete! You can access the application at the following IP address:"

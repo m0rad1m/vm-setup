@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USER=ubuntu
+USER_NAME=ubuntu
 
 # Check which Multipass command to use
 # multipass (Linux/Mac) or multipass.exe (Windows)
@@ -13,6 +13,51 @@ else
     exit 1
 fi
 
-$MP_CMD launch -n my-vm --cpus 2 --memory 2G --disk 10G --image 25.10
-$MP_CMD transfer -r data-to-transfer/* my-vm:.
-$MP_CMD exec my-vm ./../../scripts/setup-docker.sh $USER
+###################################
+### Virtual machine settings
+###################################
+
+# Network settings
+NETWORK_NAME="eth0"  # Change this to your network interface name
+IP_ADDRESS="192.168.50.99"  # Change this to your desired IP address
+
+# Launch the VM with specified resources and network configuration
+$MP_CMD launch \
+    --cpus 2 \
+    --memory 2G \
+    --disk 10G \
+    --name my-docker-vm
+    25.10
+
+
+# Transfer data files to the VM
+$MP_CMD transfer -r -p ../../data/* my-docker-vm:/home/$USER_NAME
+
+###################################
+### Host settings
+###################################
+
+# Setup SSH daemon configuration
+#  $MP_CMD exec my-docker-vm sudo ./setup-sshd-config.sh
+
+###################################
+### User settings
+###################################
+
+# Add a new user
+# User $USER_NAME already exists in the base image, so this will fail silently
+# $MP_CMD exec my-docker-vm ./../../scripts/add-user.sh $USER
+
+
+$MP_CMD exec my-docker-vm ./scripts/prepare-ssh-user-directory.sh $USER_NAME
+
+# Upload public SSH key and add it to authorized_keys
+$MP_CMD transfer ~/.ssh/ansible_demo.pub my-docker-vm:/home/$USER_NAME/.ssh/uploaded_key.pub
+$MP_CMD exec my-docker-vm ./scripts/add-ssh-authorized-key.sh $USER_NAME
+
+
+###################################
+### Docker settings
+###################################
+
+$MP_CMD exec my-docker-vm ./scripts/setup-docker.sh $USER_NAME

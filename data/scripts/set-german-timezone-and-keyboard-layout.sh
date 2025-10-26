@@ -1,13 +1,13 @@
 #!/bin/bash
 
 echo "# Setting the timezone to 'Europe/Berlin'"
-echon "---"
+echo "---"
 
 # Set timezone to Europe/Berlin
 timedatectl set-timezone Europe/Berlin
 
 echo "# Changing keyboard layout to German"
-echon "---"
+echo "---"
 
 # Set the keyboard layout to German for the current session
 sudo loadkeys de
