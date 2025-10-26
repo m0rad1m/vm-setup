@@ -24,41 +24,23 @@ $MP_CMD launch \
     --cpus 2 \
     --memory 2G \
     --disk 10G \
-    --name my-docker-vm
+    --name my-docker-vm \
     25.10
 
 
+# Get the absolute path to the script's directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
 # Transfer data files to the VM
-$MP_CMD transfer -r -p ../transfer/* my-docker-vm:.
+$MP_CMD transfer -r -p "${SCRIPT_DIR}/../transfer/"* my-docker-vm:.
+
+# Install Ansible
+$MP_CMD exec my-docker-vm -- sudo apt-get update
+$MP_CMD exec my-docker-vm -- sudo apt-get install -y ansible
 
 # Execute provisioning script inside the VM
 $MP_CMD exec my-docker-vm sudo ./provision.sh
 
-###################################
-### Host settings
-###################################
-
-# Setup SSH daemon configuration
-#  $MP_CMD exec my-docker-vm sudo ./setup-sshd-config.sh
-
-###################################
-### User settings
-###################################
-
-# Add a new user
-# User $USER_NAME already exists in the base image, so this will fail silently
-# $MP_CMD exec my-docker-vm ./../../scripts/add-user.sh $USER
 
 
-# $MP_CMD exec my-docker-vm ./scripts/prepare-ssh-user-directory.sh $USER_NAME
-
-# Upload public SSH key and add it to authorized_keys
-# $MP_CMD transfer ~/.ssh/ansible_demo.pub my-docker-vm:/home/$USER_NAME/.ssh/uploaded_key.pub
-# $MP_CMD exec my-docker-vm ./scripts/add-ssh-authorized-key.sh $USER_NAME
-
-
-###################################
-### Docker settings
-###################################
-
-#$MP_CMD exec my-docker-vm ./scripts/setup-docker.sh $USER_NAME
+echo "VM 'my-docker-vm' launched and provisioned successfully."
