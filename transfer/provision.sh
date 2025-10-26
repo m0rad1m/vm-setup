@@ -17,7 +17,7 @@ fi
 
 # Execute add-ssh-authorized-key script
 echo "Adding SSH authorized key for user: $USER_NAME"
-"$SCRIPT_DIR/add-ssh-authorized-key.sh" "$USER_NAME"
+"$SCRIPT_DIR/add-ssh-authorized-key.sh" "$USER_NAME" "./uploaded_key.pub"
 
 # Check if add-ssh-authorized-key was successful
 if [ $? -ne 0 ]; then

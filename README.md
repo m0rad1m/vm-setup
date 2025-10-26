@@ -27,7 +27,6 @@ and [Multipass](https://canonical.com/multipass)
    vagrant plugin install vagrant-vbguest-0.32.1.gem
    ```
 
-
 3. In order to bind folders from WSL to the the created VMs,
    an additional Vagrant plugin is required:
 

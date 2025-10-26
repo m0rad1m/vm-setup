@@ -2,10 +2,6 @@ Vagrant.configure("2") do |config|
   config.vm.box = "hashicorp-education/ubuntu-24-04"
   config.vm.box_version = "0.1.0"
 
-  # Define the user whose home directory to use
-  vm_user = "ubuntu"
-  home_dir = "/home/#{vm_user}"
-
 
   ###################################
   ### Virtual machine settings
@@ -18,8 +14,6 @@ Vagrant.configure("2") do |config|
         vb.name = "my-docker-vm"
     end
 
-  # When started from WSL: Prevent mapping of folders
-  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   ###################################
   ### Host settings
@@ -38,21 +32,39 @@ Vagrant.configure("2") do |config|
 
   # Network settings
   config.vm.network "public_network", ip: "192.168.50.10", bridge: "Realtek 8822CE Wireless LAN 802.11ac PCI-E NIC", hostname: true
-  config.vm.network "forwarded_port", guest: "8081", host: "8081"
+  #config.vm.network "forwarded_port", guest: "8081", host: "8081"
 
-  # Sync project folder
-  config.vm.synced_folder "/mnt/c/Users/morad/Documents/Vagrant/project", "/home/ubuntu/project", create: true
+  # Sync folders
+  # Disable default vagrant folder sync
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  
+  # Create a dedicated mount point for transfer files
+  # config.vm.synced_folder "/mnt/c/Users/<user>/Documents/Vagrant/project", "/home/vagrant/project", create: true
+
 
   ###################################
-  ### Ansible Provisioning
+  ### Ansible installation
   ###################################
 
   # Install Ansible in the VM
   config.vm.provision "shell", inline: "apt-get update && apt-get install -y ansible"
 
-  # Run Ansible Playbook for all configuration
-  config.vm.provision "ansible_local" do |ansible|
-    ansible.playbook = "ansible/playbook.yml"
-    ansible.become = true
-  end
+  ##################################
+  ### Execute provisioning script
+  ###################################
+
+  config.vm.provision "shell", name: "add-user-script",
+    path: "../transfer/add-user.sh",
+    args: "ansible",
+    privileged: true
+  
+  config.vm.provision "file",
+    source: "../transfer/uploaded_key.pub",
+    destination: "/tmp/uploaded_key.pub"
+  
+  # Run the provision script from the transfer directory
+  config.vm.provision "shell", name: "add-ssh-key-script",
+    path: "../transfer/add-ssh-authorized-key.sh",
+    args: ["ansible", "/tmp/uploaded_key.pub"],
+    privileged: true
 end
