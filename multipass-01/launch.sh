@@ -1,7 +1,5 @@
 #!/bin/bash
 
-USER_NAME=ubuntu
-
 # Check which Multipass command to use
 # multipass (Linux/Mac) or multipass.exe (Windows)
 if command -v multipass >/dev/null 2>&1; then
@@ -31,7 +29,10 @@ $MP_CMD launch \
 
 
 # Transfer data files to the VM
-$MP_CMD transfer -r -p ../../data/* my-docker-vm:/home/$USER_NAME
+$MP_CMD transfer -r -p ../transfer/* my-docker-vm:.
+
+# Execute provisioning script inside the VM
+$MP_CMD exec my-docker-vm sudo ./provision.sh
 
 ###################################
 ### Host settings
@@ -49,15 +50,15 @@ $MP_CMD transfer -r -p ../../data/* my-docker-vm:/home/$USER_NAME
 # $MP_CMD exec my-docker-vm ./../../scripts/add-user.sh $USER
 
 
-$MP_CMD exec my-docker-vm ./scripts/prepare-ssh-user-directory.sh $USER_NAME
+# $MP_CMD exec my-docker-vm ./scripts/prepare-ssh-user-directory.sh $USER_NAME
 
 # Upload public SSH key and add it to authorized_keys
-$MP_CMD transfer ~/.ssh/ansible_demo.pub my-docker-vm:/home/$USER_NAME/.ssh/uploaded_key.pub
-$MP_CMD exec my-docker-vm ./scripts/add-ssh-authorized-key.sh $USER_NAME
+# $MP_CMD transfer ~/.ssh/ansible_demo.pub my-docker-vm:/home/$USER_NAME/.ssh/uploaded_key.pub
+# $MP_CMD exec my-docker-vm ./scripts/add-ssh-authorized-key.sh $USER_NAME
 
 
 ###################################
 ### Docker settings
 ###################################
 
-$MP_CMD exec my-docker-vm ./scripts/setup-docker.sh $USER_NAME
+#$MP_CMD exec my-docker-vm ./scripts/setup-docker.sh $USER_NAME

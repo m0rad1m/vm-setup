@@ -1,13 +1,6 @@
 #!/bin/bash
 
-# Static password for the new user
-USER_PASSWORD="ubuntu"
-
-# Check if script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Error: This script must be run as root (use sudo)"
-    exit 1
-fi
+# Creates a new user, if not already existing, and sets up password and groups.
 
 # Check if USER_NAME parameter is provided
 if [ $# -ne 1 ]; then
@@ -17,6 +10,13 @@ if [ $# -ne 1 ]; then
 fi
 
 USER_NAME=$1
+USER_PASSWORD=$USER_NAME
+
+# Check if script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Error: This script must be run as root (use sudo)"
+    exit 1
+fi
 
 # Check if USER_NAME is valid (alphanumeric and underscores only)
 if ! [[ $USER_NAME =~ ^[a-zA-Z0-9_]+$ ]]; then

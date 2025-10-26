@@ -1,0 +1,87 @@
+---
+- name: Configure Docker VM
+  hosts: all
+  become: true
+  vars:
+    vm_user: ubuntu
+    home_dir: "/home/{{ vm_user }}"
+
+  tasks:
+    - name: Set timezone to Europe/Berlin
+      timezone:
+        name: Europe/Berlin
+
+    - name: Set German keyboard layout
+      command: setxkbmap de
+      changed_when: false
+
+    - name: Configure SSH daemon
+      copy:
+        dest: /etc/ssh/sshd_config
+        content: |
+          PermitRootLogin no
+          PubkeyAuthentication yes
+          PasswordAuthentication no
+          ChallengeResponseAuthentication no
+      notify: Restart SSH
+
+    - name: Create VM user
+      user:
+        name: "{{ vm_user }}"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+
+    - name: Create SSH directory for user
+      file:
+        path: "{{ home_dir }}/.ssh"
+        state: directory
+        mode: '0700'
+        owner: "{{ vm_user }}"
+        group: "{{ vm_user }}"
+
+    - name: Copy SSH public key
+      copy:
+        src: "~/.ssh/ansible_demo.pub"
+        dest: "{{ home_dir }}/.ssh/authorized_keys"
+        mode: '0600'
+        owner: "{{ vm_user }}"
+        group: "{{ vm_user }}"
+
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Add user to docker group
+      user:
+        name: "{{ vm_user }}"
+        groups: docker
+        append: yes
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
