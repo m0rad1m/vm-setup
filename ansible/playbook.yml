@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars:
-    vm_user: ubuntu
+    vm_user: ansible
     home_dir: "/home/{{ vm_user }}"
 
   tasks:
